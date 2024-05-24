@@ -1,0 +1,56 @@
+FROM php:7.2-fpm-alpine AS builder
+
+RUN apk update
+RUN apk add --no-cache tzdata freetype freetype-dev libpng libpng-dev libjpeg-turbo libjpeg-turbo libmcrypt libmcrypt-dev 
+RUN apk add --no-cache g++ make autoconf 
+
+RUN docker-php-ext-install mysqli gd zip sockets iconv
+RUN docker-php-ext-install bcmath pcntl shmop
+RUN pecl channel-update pecl.php.net
+RUN pecl install mcrypt 
+RUN docker-php-ext-enable mcrypt
+RUN docker-php-ext-install exif
+RUN docker-php-ext-install sysvsem
+
+RUN docker-php-ext-install pdo_mysql
+RUN apk add --no-cache libxml2 libxml2-dev
+RUN docker-php-ext-install soap
+RUN docker-php-ext-install xml
+
+RUN apk add icu-dev icu
+RUN docker-php-ext-install intl
+
+RUN apk add --no-cache gettext-dev
+RUN docker-php-ext-install gettext
+
+RUN docker-php-ext-install pcntl
+RUN docker-php-ext-install tokenizer
+RUN apk add --no-cache libxslt libxslt-dev 
+RUN docker-php-ext-install xsl
+RUN docker-php-ext-install xmlrpc
+RUN pecl install redis
+RUN docker-php-ext-enable redis
+RUN pecl install xhprof
+RUN docker-php-ext-enable xhprof
+RUN cd /tmp &&  wget https://getcomposer.org/installer && php installer --version=2.2.22 && mv composer.phar /usr/local/bin/composer
+
+FROM php:7.2-fpm-alpine
+
+COPY --from=builder /usr/local/lib/php/extensions /usr/local/lib/php/extensions
+COPY --from=builder /usr/local/etc/php/conf.d/* /usr/local/etc/php/conf.d/
+COPY --from=builder /usr/lib/libpng16.so.16 /usr/lib/
+COPY --from=builder /usr/lib/libpng16.so.16 /usr/lib/
+COPY --from=builder /usr/lib/libicuio.so.67 /usr/lib/
+COPY --from=builder /usr/lib/libmcrypt.so.4 /usr/lib/
+COPY --from=builder /usr/lib/libexslt.so.0 /usr/lib/
+COPY --from=builder /usr/lib/libintl.so.8 /usr/lib/
+COPY --from=builder /usr/lib/libicui18n.so.67 /usr/lib/
+COPY --from=builder /usr/lib/libxslt.so.1 /usr/lib/
+COPY --from=builder /usr/lib/libicuuc.so.67 /usr/lib/
+COPY --from=builder /usr/lib/libgcrypt.so.20 /usr/lib/
+COPY --from=builder /usr/lib/libstdc++.so.6 /usr/lib/
+COPY --from=builder /usr/lib/libgpg-error.so.0 /usr/lib/
+COPY --from=builder /usr/lib/libgcc_s.so.1 /usr/lib/
+COPY --from=builder /usr/lib/libicudata.so.67 /usr/lib/
+COPY --from=builder /usr/local/bin/composer /usr/local/bin/
+EXPOSE 9000 
